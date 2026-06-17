@@ -1,0 +1,34 @@
+.DS_Store
+Thumbs.db
+
+node_modules/
+.pnpm-store/
+
+.turbo/
+coverage/
+dist/
+build/
+out/
+.next/
+
+.env
+.env.local
+.env.*.local
+
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tsbuildinfo
+
+infra/docker/.data/
+
+# local workspace artifacts
+.superpowers/
+.uploads/
+
+# non-web deliverables
+apps/traveler-android/
+*.apk
+.github/workflows/android.yml

@@ -1,0 +1,59 @@
+name: web
+
+on:
+  pull_request:
+    paths:
+      - "apps/ops-web/**"
+      - "apps/admin-web/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/ops-web/**"
+      - "apps/admin-web/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+
+concurrency:
+  group: web-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - ops-web
+          - admin-web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Enable Corepack (pnpm)
+        run: corepack enable
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build ${{ matrix.app }}
+        env:
+          NODE_ENV: production
+          CI: "true"
+        run: pnpm --filter ${{ matrix.app }} build
+

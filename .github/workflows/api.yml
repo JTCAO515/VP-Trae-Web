@@ -1,0 +1,76 @@
+name: api
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - "tsconfig.base.json"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/api/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "turbo.json"
+      - "tsconfig.base.json"
+
+concurrency:
+  group: api-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Enable Corepack (pnpm)
+        run: corepack enable
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      # 如未来引入真实 DB/Redis 依赖的 e2e 测试，可在此处增加 services：
+      # services:
+      #   postgres:
+      #     image: postgres:16
+      #     env:
+      #       POSTGRES_USER: visepanda
+      #       POSTGRES_PASSWORD: visepanda
+      #       POSTGRES_DB: visepanda
+      #     ports:
+      #       - 5432:5432
+      #   redis:
+      #     image: redis:7
+      #     ports:
+      #       - 6379:6379
+
+      - name: API test
+        env:
+          NODE_ENV: test
+          CI: "true"
+        run: pnpm --filter api test
+
+      - name: API build
+        env:
+          NODE_ENV: production
+          CI: "true"
+        run: pnpm --filter api build
+

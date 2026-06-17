@@ -1,0 +1,950 @@
+openapi: 3.1.0
+info:
+  title: VisePanda Unified API
+  version: 0.1.0
+  summary: 面向游客端 App、内容运营后台与管理后台的统一 API 契约。
+  license:
+    name: UNLICENSED
+    identifier: UNLICENSED
+  description: |
+    当前契约覆盖平台底座阶段的首批边界定义：
+    - 认证闭环入口
+    - 内容消费主路径
+    - AI 会话入口
+    - 行程资产入口
+    - 管理后台用户边界占位
+servers:
+  - url: https://api.visepanda.local
+    description: local-development
+security: []
+tags:
+  - name: Platform
+    description: 平台底座与探活接口。
+  - name: Auth
+    description: 账号注册、登录和会话续期。
+  - name: AdminUsers
+    description: 管理后台用户与角色治理接口。
+  - name: Destinations
+    description: 游客端目的地内容消费接口。
+  - name: Tools
+    description: 工具类内容消费接口。
+  - name: AI
+    description: 多模型编排与旅行问答接口。
+  - name: Trips
+    description: 用户行程资产与快照接口。
+paths:
+  /health:
+    get:
+      operationId: getHealthStatus
+      tags:
+        - Platform
+      summary: API 健康检查
+      description: 提供本地探活结果，供启动和部署验证使用。
+      responses:
+        '200':
+          description: API 已正常启动
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthEnvelope'
+        '429':
+          description: 健康检查请求过于频繁
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: 服务不可用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /auth/register:
+    post:
+      operationId: registerTraveler
+      tags:
+        - Auth
+      summary: 游客注册
+      description: 创建 traveler 账号并返回首个会话信息。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionEnvelope'
+        '400':
+          description: 参数非法或邮箱重复
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /auth/login:
+    post:
+      operationId: loginWithEmail
+      tags:
+        - Auth
+      summary: 账号登录
+      description: 使用邮箱密码换取访问令牌与刷新令牌。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionEnvelope'
+        '401':
+          description: 账号不存在、密码错误或状态不可登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /admin/users:
+    get:
+      operationId: listAdminUsers
+      tags:
+        - AdminUsers
+      summary: 查询后台用户列表
+      description: 管理后台查看账号与角色状态的占位接口。
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 用户列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserListEnvelope'
+        '403':
+          description: 角色权限不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /destinations:
+    get:
+      operationId: listPublishedDestinations
+      tags:
+        - Destinations
+      summary: 获取已发布目的地列表
+      description: 游客端 Explore、Home 与城市搜索入口共用该接口。
+      parameters:
+        - in: query
+          name: locale
+          schema:
+            type: string
+            default: en-US
+          description: 内容语言。
+      responses:
+        '200':
+          description: 返回已发布目的地列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DestinationListEnvelope'
+        '400':
+          description: 查询参数非法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /destinations/{id}:
+    get:
+      operationId: getPublishedDestinationDetail
+      tags:
+        - Destinations
+      summary: 获取已发布目的地详情
+      description: 游客端目的地详情页和 AI 知识注入共用该接口。
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: locale
+          schema:
+            type: string
+            default: en-US
+          description: 内容语言。
+      responses:
+        '200':
+          description: 返回已发布目的地详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DestinationDetailEnvelope'
+        '400':
+          description: 查询参数非法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /tools:
+    get:
+      operationId: listToolGuides
+      tags:
+        - Tools
+      summary: 获取工具内容列表
+      description: 为游客端工具页和 AI 上下文装配提供工具内容摘要。
+      parameters:
+        - in: query
+          name: locale
+          schema:
+            type: string
+            default: en-US
+      responses:
+        '200':
+          description: 返回工具类内容列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolGuideListEnvelope'
+        '400':
+          description: 查询参数非法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /ai/chat:
+    post:
+      operationId: createAIChatCompletion
+      tags:
+        - AI
+      summary: 发起旅行问答
+      description: 统一 AI 编排入口，后续按任务类型路由到不同模型。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIChatRequest'
+      responses:
+        '200':
+          description: 返回结构化 AI 应答
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIChatEnvelope'
+        '400':
+          description: 请求不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /ai/tasks/plan-trip:
+    post:
+      operationId: createTripPlanTask
+      tags:
+        - AI
+      summary: 发起行程规划任务
+      description: 使用 trip planning 路由生成多日行程建议。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AITripPlanRequest'
+      responses:
+        '200':
+          description: 返回行程规划结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AITripPlanEnvelope'
+        '400':
+          description: 请求不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /ai/models:
+    get:
+      operationId: listAIModels
+      tags:
+        - AI
+      summary: 获取可用模型列表
+      description: 返回当前 AI 编排域暴露的模型配置摘要。
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 返回模型列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIModelListEnvelope'
+        '400':
+          description: 请求不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /ai/routes:
+    get:
+      operationId: listAIRoutes
+      tags:
+        - AI
+      summary: 获取任务路由列表
+      description: 返回任务类型与主备模型路由映射。
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 返回 AI 路由列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIRouteListEnvelope'
+        '400':
+          description: 请求不合法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /trips:
+    get:
+      operationId: listTrips
+      tags:
+        - Trips
+      summary: 获取当前用户行程列表
+      description: 返回当前登录用户名下可见的 Trip 摘要。
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 返回行程列表
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripListEnvelope'
+        '401':
+          description: 未登录或会话失效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    post:
+      operationId: createTrip
+      tags:
+        - Trips
+      summary: 创建行程
+      description: 接收结构化结果或人工输入，生成用户行程资产。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTripRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripEnvelope'
+        '400':
+          description: 请求参数非法
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+    HealthPayload:
+      type: object
+      required:
+        - service
+        - status
+      properties:
+        service:
+          type: string
+          const: visepanda-api
+        status:
+          type: string
+          const: ok
+    HealthEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - requestId
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/HealthPayload'
+        requestId:
+          type: string
+          format: uuid
+        error:
+          $ref: '#/components/schemas/ApiError'
+    ErrorEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - requestId
+        - error
+      properties:
+        success:
+          type: boolean
+          const: false
+        data:
+          type: 'null'
+        requestId:
+          type: string
+        error:
+          $ref: '#/components/schemas/ApiError'
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+    UserIdentity:
+      type: object
+      required:
+        - id
+        - email
+        - role
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+            - traveler
+            - operator
+            - admin
+        status:
+          type: string
+          enum:
+            - pending
+            - active
+            - disabled
+    AuthSessionPayload:
+      type: object
+      required:
+        - accessToken
+        - refreshToken
+        - expiresIn
+        - user
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          minimum: 1
+        user:
+          $ref: '#/components/schemas/UserIdentity'
+    AuthSessionEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - requestId
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/AuthSessionPayload'
+        requestId:
+          type: string
+        error:
+          $ref: '#/components/schemas/ApiError'
+    AdminUserSummary:
+      allOf:
+        - $ref: '#/components/schemas/UserIdentity'
+        - type: object
+          required:
+            - lastLoginAt
+          properties:
+            lastLoginAt:
+              anyOf:
+                - type: string
+                  format: date-time
+                - type: 'null'
+    AdminUserListEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - requestId
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminUserSummary'
+        requestId:
+          type: string
+        error:
+          $ref: '#/components/schemas/ApiError'
+    DestinationSummary:
+      type: object
+      required:
+        - id
+        - slug
+        - name
+        - summary
+        - locale
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        name:
+          type: string
+        summary:
+          type: string
+        locale:
+          type: string
+    DestinationListEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - requestId
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DestinationSummary'
+        requestId:
+          type: string
+        error:
+          $ref: '#/components/schemas/ApiError'
+    DestinationDetail:
+      type: object
+      required:
+        - id
+        - slug
+        - name
+        - summary
+        - locale
+        - body
+        - highlights
+        - versionNo
+        - publishedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        name:
+          type: string
+        summary:
+          type: string
+        locale:
+          type: string
+        body:
+          type: string
+        highlights:
+          type: array
+          items:
+            type: string
+        versionNo:
+          type: integer
+        publishedAt:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: 'null'
+    DestinationDetailEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - requestId
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/DestinationDetail'
+        requestId:
+          type: string
+        error:
+          $ref: '#/components/schemas/ApiError'
+    ToolGuideSummary:
+      type: object
+      required:
+        - id
+        - slug
+        - title
+        - summary
+        - locale
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        locale:
+          type: string
+    ToolGuideListEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - requestId
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ToolGuideSummary'
+        requestId:
+          type: string
+        error:
+          $ref: '#/components/schemas/ApiError'
+    AIChatRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          minLength: 1
+        locale:
+          type: string
+          default: en-US
+        tripContextId:
+          type: string
+          format: uuid
+        promptTemplateVersion:
+          type: string
+    AITripPlanRequest:
+      type: object
+      required:
+        - destination
+        - days
+      properties:
+        destination:
+          type: string
+          minLength: 1
+        days:
+          type: integer
+          minimum: 1
+        interests:
+          type: array
+          items:
+            type: string
+        locale:
+          type: string
+          default: en-US
+        promptTemplateVersion:
+          type: string
+    AIInvocationPayload:
+      type: object
+      required:
+        - answer
+        - taskType
+        - model
+        - provider
+        - routePolicy
+        - promptTemplateVersion
+        - logId
+        - fallbackUsed
+        - attemptCount
+      properties:
+        answer:
+          type: string
+        taskType:
+          type: string
+          enum:
+            - chat_travel_advice
+            - trip_planning
+        model:
+          type: string
+        provider:
+          type: string
+        routePolicy:
+          type: string
+        promptTemplateVersion:
+          type: string
+        logId:
+          type: string
+          format: uuid
+        fallbackUsed:
+          type: boolean
+        attemptCount:
+          type: integer
+          minimum: 1
+    AIChatPayload:
+      allOf:
+        - $ref: '#/components/schemas/AIInvocationPayload'
+    AITripPlanPayload:
+      allOf:
+        - $ref: '#/components/schemas/AIInvocationPayload'
+    AIChatEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - requestId
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/AIChatPayload'
+        requestId:
+          type: string
+        error:
+          $ref: '#/components/schemas/ApiError'
+    AITripPlanEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - requestId
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/AITripPlanPayload'
+        requestId:
+          type: string
+        error:
+          $ref: '#/components/schemas/ApiError'
+    AIModelSummary:
+      type: object
+      required:
+        - id
+        - provider
+        - model
+        - capabilities
+        - priority
+        - status
+      properties:
+        id:
+          type: string
+        provider:
+          type: string
+        model:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+        priority:
+          type: integer
+        status:
+          type: string
+          enum:
+            - active
+            - disabled
+    AIModelListEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - requestId
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIModelSummary'
+        requestId:
+          type: string
+        error:
+          $ref: '#/components/schemas/ApiError'
+    AIRouteSummary:
+      type: object
+      required:
+        - taskType
+        - routePolicy
+        - primaryModelId
+        - fallbackModelIds
+        - promptTemplateVersion
+      properties:
+        taskType:
+          type: string
+          enum:
+            - chat_travel_advice
+            - trip_planning
+        routePolicy:
+          type: string
+        primaryModelId:
+          type: string
+        fallbackModelIds:
+          type: array
+          items:
+            type: string
+        promptTemplateVersion:
+          type: string
+    AIRouteListEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - requestId
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIRouteSummary'
+        requestId:
+          type: string
+        error:
+          $ref: '#/components/schemas/ApiError'
+    CreateTripRequest:
+      type: object
+      required:
+        - title
+        - destinationIds
+      properties:
+        title:
+          type: string
+        destinationIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+        source:
+          type: string
+          enum:
+            - manual
+            - ai_chat
+    TripSummary:
+      type: object
+      required:
+        - id
+        - title
+        - destinationIds
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        destinationIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        status:
+          type: string
+          enum:
+            - draft
+            - active
+            - archived
+    TripEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - requestId
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          $ref: '#/components/schemas/TripSummary'
+        requestId:
+          type: string
+        error:
+          $ref: '#/components/schemas/ApiError'
+    TripListEnvelope:
+      type: object
+      required:
+        - success
+        - data
+        - requestId
+      properties:
+        success:
+          type: boolean
+          const: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/TripSummary'
+        requestId:
+          type: string
+        error:
+          $ref: '#/components/schemas/ApiError'

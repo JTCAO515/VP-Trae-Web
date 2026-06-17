@@ -1,0 +1,57 @@
+CREATE TABLE trips (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  destination VARCHAR(200) NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'draft',
+  ai_summary TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE trip_days (
+  id UUID PRIMARY KEY,
+  trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+  day_number INTEGER NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE trip_items (
+  id UUID PRIMARY KEY,
+  trip_day_id UUID NOT NULL REFERENCES trip_days(id) ON DELETE CASCADE,
+  item_type VARCHAR(64) NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  start_time VARCHAR(16) NOT NULL,
+  end_time VARCHAR(16) NOT NULL,
+  notes TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE trip_snapshots (
+  id UUID PRIMARY KEY,
+  trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+  version INTEGER NOT NULL,
+  reason TEXT NULL,
+  payload JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE favorites (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL,
+  trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE generation_records (
+  id UUID PRIMARY KEY,
+  trip_id UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL,
+  source_type VARCHAR(32) NOT NULL,
+  invocation_log_id VARCHAR(128) NOT NULL,
+  task_type VARCHAR(64) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
