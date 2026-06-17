@@ -5,6 +5,7 @@ import type {
   ContentReviewState,
   DestinationDetail,
   DestinationSummary,
+  ToolGuideDetail,
   ToolGuideSummary,
 } from '@visepanda/shared-types';
 
@@ -263,6 +264,27 @@ export class ContentService {
         locale: version.locale,
       }))
       .sort((left, right) => left.title.localeCompare(right.title, 'zh-CN'));
+  }
+
+  getPublishedToolGuide(id: string, locale = 'en-US'): ToolGuideDetail {
+    const record = this.getToolGuideRecord(id);
+    const version = this.getPublishedToolGuideVersion(record);
+
+    if (!version || version.locale !== locale) {
+      throw new BadRequestException('Published tool guide not found');
+    }
+
+    return {
+      id: record.id,
+      slug: version.snapshot.slug,
+      locale: version.locale,
+      title: version.snapshot.title,
+      summary: version.snapshot.summary,
+      body: version.snapshot.body,
+      tags: [...version.snapshot.tags],
+      versionNo: version.versionNo,
+      publishedAt: version.publishedAt?.toISOString() ?? null,
+    };
   }
 
   private createDestinationVersion(

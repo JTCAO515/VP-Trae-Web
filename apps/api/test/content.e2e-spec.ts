@@ -192,7 +192,7 @@ describe('Content publishing workflow (e2e)', () => {
     });
   });
 
-  it('支持工具内容草稿、审核、发布，并暴露 GET /tools', async () => {
+  it('支持工具内容草稿、审核、发布，并暴露 GET /tools 与 GET /tools/:id', async () => {
     const draftResponse = await request(app.getHttpServer())
       .post('/content/tools/drafts')
       .send({
@@ -244,5 +244,22 @@ describe('Content publishing workflow (e2e)', () => {
         locale: 'zh-CN',
       },
     ]);
+
+    const detailResponse = await request(app.getHttpServer())
+      .get(`/tools/${toolId}`)
+      .query({ locale: 'zh-CN' })
+      .expect(200);
+
+    expect(detailResponse.body.data).toEqual({
+      id: toolId,
+      slug: 'visa-checklist',
+      locale: 'zh-CN',
+      title: '签证清单',
+      summary: '办理签证前的材料准备清单',
+      body: '护照、照片、行程单',
+      tags: ['签证', '材料'],
+      versionNo: 1,
+      publishedAt: expect.any(String),
+    });
   });
 });

@@ -96,6 +96,13 @@ export interface ToolGuideSummary {
   locale: string;
 }
 
+export interface ToolGuideDetail extends ToolGuideSummary {
+  body: string;
+  tags: string[];
+  versionNo: number;
+  publishedAt: string | null;
+}
+
 export type AITaskType = 'chat_travel_advice' | 'trip_planning';
 export type AIModelStatus = 'active' | 'disabled';
 

@@ -72,4 +72,9 @@ export class ContentController {
   listToolGuides(@Query('locale') locale?: string) {
     return this.contentService.listPublishedToolGuides(locale);
   }
+
+  @Get('tools/:id')
+  getToolGuide(@Param('id') id: string, @Query('locale') locale?: string) {
+    return this.contentService.getPublishedToolGuide(id, locale);
+  }
 }
