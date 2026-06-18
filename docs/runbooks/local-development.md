@@ -1,6 +1,6 @@
 # 本地开发说明
 
-本文档定义 VisePanda 平台底座阶段的本地启动方式、依赖准备和推荐开发顺序。
+本文档定义当前 VisePanda Web 体系的本地启动方式、依赖准备和推荐开发顺序。
 
 ## 1. 前置要求
 
@@ -33,6 +33,7 @@ cp .env.example .env
    - `S3_ENDPOINT`
    - `S3_ACCESS_KEY`
    - `S3_SECRET_KEY`
+   - `API_BASE_URL`（Web 端代理到统一 API 时使用，默认 `http://localhost:3000`）
 
 ## 4. 启动本地基础依赖
 
@@ -54,18 +55,20 @@ pnpm docker:check
 
 ## 5. 推荐启动顺序
 
-当前阶段应用尚未初始化完成，后续任务落地时按以下顺序启动：
+当前建议按以下顺序启动：
 
 1. 本地依赖：PostgreSQL、Redis、MinIO
 2. 数据迁移：执行 `infra/migrations` 中的初始化脚本
 3. API：`apps/api`
-4. Web 后台：`apps/ops-web` 与 `apps/admin-web`
-5. Android：`apps/traveler-android`
+4. 游客前台：`apps/traveler-web`
+5. Web 后台：`apps/ops-web` 与 `apps/admin-web`
+6. Android：`apps/traveler-android`（仅历史实现参考，不再是主前台）
 
 原因：
 
 - API 负责统一提供鉴权、内容、AI 与行程能力
-- Web 与 Android 依赖 API 契约和本地基础数据
+- `traveler-web`、`ops-web`、`admin-web` 共同依赖统一 API
+- `traveler-web` 在非测试环境下会自动读取内容域内存种子，因此启动后就能看到演示内容
 
 ## 6. 数据迁移入口
 
@@ -84,6 +87,22 @@ pnpm lint
 pnpm test
 pnpm build
 ```
+
+## 8. 常用启动命令
+
+```bash
+pnpm --filter api start:dev
+pnpm --filter traveler-web dev
+pnpm --filter ops-web dev
+pnpm --filter admin-web dev
+```
+
+默认端口：
+
+- `api`: `3000`
+- `traveler-web`: `3100`
+- `ops-web`: `3101`
+- `admin-web`: `3102`
 
 说明：
 

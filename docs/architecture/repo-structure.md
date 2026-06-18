@@ -10,6 +10,7 @@
 │   ├── admin-web
 │   ├── api
 │   ├── ops-web
+│   ├── traveler-web
 │   └── traveler-android
 ├── packages
 │   ├── domain-ai
@@ -34,6 +35,7 @@
 - `api`：统一 API / BFF 工程
 - `ops-web`：内容运营后台
 - `admin-web`：管理后台
+- `traveler-web`：游客前台 Web，承接内容浏览、AI 规划与 Trip 资产页
 - `traveler-android`：游客端 Android App
 
 ### `packages/`
@@ -61,7 +63,7 @@
 1. 根目录只放工作区与工程级配置，不放业务实现
 2. 跨应用共享逻辑优先进入 `packages/`，避免复制粘贴
 3. 领域包按业务边界拆分，避免出现巨型 `shared` 杂包
-4. API 先稳定契约，再由 App 与 Web 消费
+4. API 先稳定契约，再由 `traveler-web`、后台与 App 消费
 
 ## 当前状态
 
